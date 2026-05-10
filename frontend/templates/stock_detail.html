@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>All Stocks</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stock.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<h2>Search Stock</h2>
+
+<input type="text" id="searchBox" placeholder="Search stock...">
+
+<ul id="results"></ul>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h3>Filter</h3>
+
+        <p>NSE</p>
+        <p>BSE</p>
+        <p>Nifty 50</p>
+        <p>Nifty Bank</p>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <h2>Nifty 50 Stocks</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Stock</th>
+                    <th>Price</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+
+            <tbody id="nifty-table"></tbody>
+        </table>
+
+        <br>
+
+        <h2>All Stocks</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Graph</th>
+                    <th>LTP</th>
+                    <th>Market Cap</th>
+                </tr>
+            </thead>
+
+            <tbody id="stockTable"></tbody>
+        </table>
+
+    </div>
+</div>
+
+<!-- STOCK MODAL -->
+<div id="stockModal" class="stock-modal" style="display:none;">
+
+    <div class="modal-overlay" onclick="closeModal()"></div>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h3 id="modalTitle">Stock</h3>
+
+            <span class="close-btn" onclick="closeModal()">×</span>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="detail-row">
+                <span>Price</span>
+
+                <span id="modalPrice" class="price-big">₹0</span>
+            </div>
+
+            <div class="detail-row">
+                <span>Change</span>
+
+                <span id="modalChange">0%</span>
+            </div>
+
+            <canvas id="modalChart"></canvas>
+
+            <div class="quick-actions">
+                <button class="btn-buy" onclick="openTrade(currentStock, currentPrice)">Buy</button>
+
+                <button class="btn-sell" onclick="openTrade(currentStock, currentPrice)">Sell</button>
+
+                <button class="btn-chart">Full Chart</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- BUY SELL MODAL -->
+<div id="tradeModal" class="stock-modal" style="display:none;">
+
+    <div class="modal-overlay" onclick="closeTrade()"></div>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h3 id="tradeTitle">Trade</h3>
+
+            <span class="close-btn" onclick="closeTrade()">×</span>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="detail-row">
+                <span>Stock</span>
+
+                <span id="tradeStock"></span>
+            </div>
+
+            <div class="detail-row">
+                <span>Price</span>
+
+                <span id="tradePrice"></span>
+            </div>
+
+            <div class="detail-row">
+                <span>Quantity</span>
+
+                <input type="number" id="qty" value="1" min="1">
+            </div>
+
+            <div class="quick-actions">
+                <button class="btn-buy" onclick="placeOrder('BUY')">Buy</button>
+
+                <button class="btn-sell" onclick="placeOrder('SELL')">Sell</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+let currentStock = ""
+let currentPrice = 0
+
+const stocks = [
+
+    { name: "Reliance", symbol: "RELIANCE.NS" },
+    { name: "TCS", symbol: "TCS.NS" },
+    { name: "Infosys", symbol: "INFY.NS" },
+    { name: "HDFC Bank", symbol: "HDFCBANK.NS" },
+    { name: "ICICI Bank", symbol: "ICICIBANK.NS" },
+    { name: "SBI", symbol: "SBIN.NS" },
+    { name: "Wipro", symbol: "WIPRO.NS" },
+    { name: "HCL Tech", symbol: "HCLTECH.NS" },
+    { name: "Tech Mahindra", symbol: "TECHM.NS" },
+    { name: "LTIMindtree", symbol: "LTIM.NS" },
+    { name: "Bharti Airtel", symbol: "BHARTIARTL.NS" },
+    { name: "ITC", symbol: "ITC.NS" },
+    { name: "Hindustan Unilever", symbol: "HINDUNILVR.NS" },
+    { name: "Asian Paints", symbol: "ASIANPAINT.NS" },
+    { name: "Nestle India", symbol: "NESTLEIND.NS" },
+    { name: "Bajaj Finance", symbol: "BAJFINANCE.NS" },
+    { name: "Bajaj Finserv", symbol: "BAJAJFINSV.NS" },
+    { name: "Kotak Mahindra Bank", symbol: "KOTAKBANK.NS" },
+    { name: "Axis Bank", symbol: "AXISBANK.NS" },
+    { name: "IndusInd Bank", symbol: "INDUSINDBK.NS" },
+    { name: "UltraTech Cement", symbol: "ULTRACEMCO.NS" },
+    { name: "Adani Enterprises", symbol: "ADANIENT.NS" },
+    { name: "Adani Ports", symbol: "ADANIPORTS.NS" },
+    { name: "NTPC", symbol: "NTPC.NS" },
+    { name: "Power Grid", symbol: "POWERGRID.NS" },
+    { name: "Tata Motors", symbol: "TATAMOTORS.NS" },
+    { name: "Maruti Suzuki", symbol: "MARUTI.NS" },
+    { name: "Mahindra & Mahindra", symbol: "M&M.NS" },
+    { name: "Eicher Motors", symbol: "EICHERMOT.NS" },
+    { name: "Hero MotoCorp", symbol: "HEROMOTOCO.NS" },
+    { name: "Titan", symbol: "TITAN.NS" },
+    { name: "Sun Pharma", symbol: "SUNPHARMA.NS" },
+    { name: "Dr Reddy's", symbol: "DRREDDY.NS" },
+    { name: "Cipla", symbol: "CIPLA.NS" },
+    { name: "Apollo Hospitals", symbol: "APOLLOHOSP.NS" },
+    { name: "Coal India", symbol: "COALINDIA.NS" },
+    { name: "ONGC", symbol: "ONGC.NS" },
+    { name: "BPCL", symbol: "BPCL.NS" },
+    { name: "JSW Steel", symbol: "JSWSTEEL.NS" },
+    { name: "Tata Steel", symbol: "TATASTEEL.NS" },
+    { name: "Hindalco", symbol: "HINDALCO.NS" },
+    { name: "Grasim", symbol: "GRASIM.NS" },
+    { name: "Divis Labs", symbol: "DIVISLAB.NS" },
+    { name: "Britannia", symbol: "BRITANNIA.NS" },
+    { name: "SBI Life", symbol: "SBILIFE.NS" },
+    { name: "HDFC Life", symbol: "HDFCLIFE.NS" },
+    { name: "BEL", symbol: "BEL.NS" },
+    { name: "UPL", symbol: "UPL.NS" },
+    { name: "Tata Consumer", symbol: "TATACONSUM.NS" },
+    { name: "Pidilite", symbol: "PIDILITIND.NS" },
+    { name: "Ambuja Cement", symbol: "AMBUJACEM.NS" },
+    { name: "DLF", symbol: "DLF.NS" },
+    { name: "Siemens", symbol: "SIEMENS.NS" },
+    { name: "Zomato", symbol: "ZOMATO.NS" },
+    { name: "Paytm", symbol: "PAYTM.NS" },
+    { name: "IRCTC", symbol: "IRCTC.NS" },
+    { name: "Varun Beverages", symbol: "VBL.NS" }
+
+]
+
+/* LOAD STOCK TABLE */
+
+async function loadStocks() {
+
+    const table = document.getElementById("stockTable")
+
+    table.innerHTML = ""
+
+    for (let stock of stocks) {
+
+        let res = await fetch(`/stock_api/${stock.symbol}`)
+
+        let data = await res.json()
+
+        let row = document.createElement("tr")
+
+        row.onclick = () => openStock(stock.symbol)
+
+        row.innerHTML = `
+        <td>
+            <b>${stock.name}</b><br>
+            ${stock.symbol}
+        </td>
+
+        <td>
+            <canvas id="chart-${stock.symbol}"></canvas>
+        </td>
+
+        <td>₹${data.price}</td>
+
+        <td>${data.market_cap}</td>
+        `
+
+        table.appendChild(row)
+
+        drawChart(stock.symbol, data.history)
+    }
+}
+
+/* SMALL GRAPH */
+
+function drawChart(symbol, data) {
+
+    const ctx = document.getElementById(`chart-${symbol}`)
+
+    new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+            labels: data.map((_, i) => i),
+
+            datasets: [{
+                data: data,
+                borderColor: "green",
+                pointRadius: 0
+            }]
+        },
+
+        options: {
+            plugins: {
+                legend: false
+            },
+
+            scales: {
+                x: {
+                    display: false
+                },
+
+                y: {
+                    display: false
+                }
+            }
+        }
+    })
+}
+
+/* OPEN MODAL */
+
+async function openStock(symbol) {
+
+    currentStock = symbol
+
+    const modal = document.getElementById("stockModal")
+
+    modal.style.display = "flex"
+
+    let res = await fetch(`/stock_api/${symbol}`)
+
+    let data = await res.json()
+
+    currentPrice = data.price
+
+    document.getElementById("modalTitle").innerText = symbol
+
+    document.getElementById("modalPrice").innerText = "₹" + data.price
+
+    let change = document.getElementById("modalChange")
+
+    change.innerText = data.change + "%"
+
+    change.style.color = data.change >= 0 ? "green" : "red"
+
+    const ctx = document.getElementById("modalChart")
+
+    new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+            labels: data.history.map((_, i) => i),
+
+            datasets: [{
+                data: data.history,
+                borderColor: "blue"
+            }]
+        }
+    })
+}
+
+/* CLOSE MODAL */
+
+function closeModal() {
+
+    document.getElementById("stockModal").style.display = "none"
+}
+
+/* LOAD NIFTY */
+
+async function loadNifty() {
+
+    try {
+
+        const res = await fetch("/nifty50")
+
+        const data = await res.json()
+
+        const table = document.getElementById("nifty-table")
+
+        table.innerHTML = ""
+
+        data.forEach(stock => {
+
+            table.innerHTML += `
+            <tr onclick="openStock('${stock.symbol}')">
+
+                <td>${stock.symbol}</td>
+
+                <td>₹${stock.price}</td>
+
+                <td style="color:${stock.change >= 0 ? 'green' : 'red'}">
+                    ${stock.change}
+                </td>
+
+            </tr>
+            `
+        })
+
+    } catch (e) {
+
+        console.log("Nifty error", e)
+    }
+}
+
+/* SEARCH */
+
+document.getElementById("searchBox").addEventListener("keyup", function () {
+
+    let value = this.value.toLowerCase()
+
+    let results = document.getElementById("results")
+
+    results.innerHTML = ""
+
+    if (value === "") return
+
+    let filtered = stocks.filter(stock =>
+        stock.name.toLowerCase().includes(value) ||
+        stock.symbol.toLowerCase().includes(value)
+    )
+
+    filtered.forEach(stock => {
+
+        let li = document.createElement("li")
+
+        li.innerText = stock.name + " (" + stock.symbol + ")"
+
+        li.onclick = () => {
+
+            openStock(stock.symbol)
+
+            results.innerHTML = ""
+
+            document.getElementById("searchBox").value = ""
+        }
+
+        results.appendChild(li)
+    })
+})
+
+/* TRADE MODAL */
+
+function openTrade(stock, price) {
+
+    document.getElementById("tradeModal").style.display = "flex"
+
+    document.getElementById("tradeStock").innerText = stock
+
+    document.getElementById("tradePrice").innerText = "₹" + price
+}
+
+function closeTrade() {
+
+    document.getElementById("tradeModal").style.display = "none"
+}
+
+function placeOrder(type) {
+
+    let qty = document.getElementById("qty").value
+
+    alert(type + " Order Placed\n\nStock: " + currentStock + "\nQty: " + qty)
+
+    closeTrade()
+}
+
+/* RUN */
+
+loadStocks()
+
+loadNifty()
+
+</script>
+
+</body>
+</html>

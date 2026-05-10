@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #131722;
+    color: white;
+}
+
+/* Header */
+.market-header {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 15px;
+    background: #1e222d;
+}
+
+.index-card {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #2a2e39;
+    text-align: center;
+}
+
+.pos { color: #22c55e; }
+.neg { color: #ef4444; }
+
+/* Auth */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+}
+
+.auth-card {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 10px;
+    width: 350px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #22c55e;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 35%;
+    cursor: pointer;
+}
+
+.social-btn {
+    margin-top: 10px;
+    background: #2a2e39;
+}
+
+a { color: #22c55e; text-decoration: none; }
+</style>
+</head>
+
+<body>
+
+<header class="market-header">
+    <div class="index-card">NIFTY<br>22450 <span class="neg">-0.17%</span></div>
+    <div class="index-card">BANKNIFTY<br>60110 <span class="pos">+0.09%</span></div>
+    <div class="index-card">SENSEX<br>83559 <span class="neg">-0.39%</span></div>
+</header>
+
+<div class="container">
+<div class="auth-card">
+
+<h2>Login</h2>
+
+<form method="POST" action="/login">
+    <input type="email" name="email" placeholder="Email" required>
+
+    <div class="password-wrapper">
+        <input type="password" name="password" id="loginPassword" placeholder="Password" required>
+        <span class="toggle-password" onclick="togglePassword()">
+            <i class="fa-regular fa-eye"></i>
+        </span>
+    </div>
+
+    <button type="submit">Login</button>
+<p style="text-align:right; margin-top:5px;">
+    <a href="/forgot-password">Forgot Password?</a>
+</p>
+</form>
+
+<button class="social-btn"><i class="fa-brands fa-google"></i> Google</button>
+<button class="social-btn"><i class="fa-brands fa-facebook"></i> Facebook</button>
+
+<p>Don't have account? <a href="/register">Register</a></p>
+
+</div>
+</div>
+
+<script>
+function togglePassword() {
+    let input = document.getElementById("loginPassword");
+    input.type = input.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Update Profile</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    /* Vibrant background for glass effect */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.profile-container {
+    width: 350px;
+    margin: 50px auto;
+    /* Glassmorphism: semi-transparent + blur */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    text-align: center;
+    /* Liquid base animation */
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    animation: liquidFloat 6s ease-in-out infinite;
+}
+
+@keyframes liquidFloat {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.profile-container:hover {
+    /* Enhanced liquid glass on hover */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 
+        0 12px 40px rgba(0,0,0,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    transform: scale(1.05) rotate(2deg);
+    border-radius: 25px 15px 25px 15px; /* Blob morph */
+}
+
+.profile-container img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    border: 2px solid rgba(255,255,255,0.3);
+    transition: all 0.3s ease;
+}
+
+.profile-container img:hover {
+    border-color: rgba(255,255,255,0.6);
+    transform: scale(1.1);
+}
+
+.profile-container input,
+.profile-container select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    outline: none;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.profile-container input::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+.profile-container input:focus,
+.profile-container select:focus {
+    border-color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.profile-container button {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,123,255,0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.profile-container button:hover {
+    background: rgba(0,86,179,0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+}
+</style>
+
+</head>
+<body>
+
+<div class="profile-container">
+
+<img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}">
+
+<form method="POST" enctype="multipart/form-data">
+
+<label>Username</label>
+<input type="text" name="username" value="{{ user.username }}">
+
+<label>Gender</label>
+<select name="gender">
+<option {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+<option {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+</select>
+
+<label>Date of Birth</label>
+<input type="date" name="dob" value="{{ user.dob }}">
+
+<label>Mobile</label>
+<input type="text" name="mobile" value="{{ user.mobile }}">
+
+<label>Email</label>
+<input type="email" name="email" value="{{ user.email }}">
+
+<label>Upload Photo</label>
+<input type="file" name="photo">
+
+<button type="submit">Update Profile</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

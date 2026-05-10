@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TradeSphere | Stock Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+   <div class="stock-ticker">
+    <div class="ticker-wrap">
+        <!-- Duplicate items for seamless loop -->
+        <div class="ticker-item">
+            <span class="symbol">CRUDE OIL MINI</span>
+            <span class="price">91,980</span>
+            <span class="change positive">
+                <span class="arrow">↑</span>2.96%
+            </span>
+        </div>
+        <div class="ticker-item">
+            <span class="symbol">GOLD MINI</span>
+            <span class="price">71,168</span>
+            <span class="change negative">
+                <span class="arrow">↓</span>0.59%
+            </span>
+        </div>
+        <div class="ticker-item">
+            <span class="symbol">SILVER MINI</span>
+            <span class="price">24,399</span>
+            <span class="change negative">
+                <span class="arrow">↓</span>0.2%
+            </span>
+        </div>
+        <!-- Duplicate for infinite scroll -->
+        <div class="ticker-item">
+            <span class="symbol">CRUDE OIL MINI</span>
+            <span class="price">91,980</span>
+            <span class="change positive">
+                <span class="arrow">↑</span>2.96%
+            </span>
+        </div>
+        <div class="ticker-item">
+            <span class="symbol">GOLD MINI</span>
+            <span class="price">71,168</span>
+            <span class="change negative">
+                <span class="arrow">↓</span>0.59%
+            </span>
+        </div>
+        <div class="ticker-item">
+            <span class="symbol">SILVER MINI</span>
+            <span class="price">24,399</span>
+            <span class="change negative">
+                <span class="arrow">↓</span>0.2%
+            </span>
+        </div>
+    </div>
+</div>
+<body>
+    <header class="navbar">
+        <!-- LOGO -->
+        <div class="logo">TradeSphere</div>
+
+        <!-- RIGHT SECTION -->
+        <div class="right-section">
+            <a href="{{ url_for('home') }}">Home</a>
+            <!-- <a href="/about">About</a> --> 
+            <a href="/markets">Markets</a>
+            <!-- <a href="/service">Service</a> -->
+            <a href="/stocks">Stocks</a>
+            <a href="/contact">Contact Us</a>
+
+            {% if current_user.is_authenticated %}
+            <div class="profile-box">
+                <img src="{{ url_for('static', filename='uploads/' + (current_user.profile_pic or 'default.png')) }}"
+                     class="profile-img"
+                     id="profileBtn">
+                <div class="dropdown" id="dropdownMenu">
+                    <a href="/profile">Update Profile</a>
+                    <a href="/logout">Logout</a>
+                </div>
+            </div>
+            {% else %}
+            <a href="/login" class="btn-primary">Login/Register</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Smart way to <span>Track Stocks</span></h1>
+            <p>Real-time stock prices tracker</p>
+            <div class="hero-buttons">
+<a class="btn-primary" href="/get-started">Get Started</a>
+                <a class="btn-outline" href="/stock">View Markets</a>
+            </div>
+        </div>
+        
+    </section>
+
+    
+    <br>
+    {% include 'chart.html' %}
+    <br>
+    {% include 'footer.html' %}
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

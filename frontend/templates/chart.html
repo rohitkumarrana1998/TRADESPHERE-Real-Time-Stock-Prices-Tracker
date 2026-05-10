@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Stock India - Live TradeSpahere</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chart.css') }}">    
+</head>
+<body>
+    <!-- <div>
+        <span id="statusText">Loading...</span>
+    </div> -->
+
+    <div class="container-chart">
+        <div class="header-chart">
+            <h1>Stock India</h1>
+            <p>Live TradeSpahere Stock Prices Tracker</p>
+        </div>
+
+        <div class="market-grid" id="marketGrid">
+            <!-- Live data loads here -->
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+</body>
+</html>

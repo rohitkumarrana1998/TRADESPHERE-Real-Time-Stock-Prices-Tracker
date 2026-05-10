@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> TradeSphere Live Stock Dashboard - FINAL VERSION</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); 
+            color: white; 
+            overflow-x: hidden;
+        }
+        
+        .header { 
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); 
+            padding: 1.2rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 1.9rem; font-weight: 700; }
+        .search-box { 
+            padding: 0.9rem 1.6rem; 
+            border: none; 
+            border-radius: 30px; 
+            width: 320px; 
+            font-size: 1rem; 
+            background: rgba(255,255,255,0.12); 
+            color: white; 
+            backdrop-filter: blur(15px);
+            transition: all 0.3s;
+        }
+        .search-box::placeholder { color: rgba(255,255,255,0.7); }
+        .search-box:focus { 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.2); 
+            width: 350px;
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .filters { 
+            display: flex; 
+            gap: 1rem; 
+            padding: 1.2rem 2rem; 
+            background: rgba(255,255,255,0.06); 
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .filter-btn { 
+            padding: 0.6rem 1.4rem; 
+            border: none; 
+            border-radius: 25px; 
+            background: rgba(255,255,255,0.12); 
+            color: white; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            font-weight: 500;
+        }
+        .filter-btn.active, .filter-btn:hover { 
+            background: linear-gradient(45deg, #4ade80, #22c55e); 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(74,222,128,0.4);
+        }
+        
+        .main-content { display: grid; grid-template-columns: 260px 1fr; height: calc(100vh - 160px); }
+        
+        .sidebar { 
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(20px); 
+            padding: 2rem 1.5rem; 
+            overflow-y: auto; 
+            border-right: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 160px;
+            height: calc(100vh - 160px);
+        }
+        .sidebar h3, .sidebar h4 { margin-bottom: 1.2rem; color: #4ade80; font-weight: 600; }
+        .filter-group { margin-bottom: 2rem; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 0.8rem; }
+        .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.8rem; 
+            cursor: pointer; 
+            padding: 0.8rem; 
+            border-radius: 12px; 
+            transition: all 0.3s; 
+        }
+        .checkbox-item:hover { background: rgba(255,255,255,0.1); }
+        .checkbox-item input:checked + span { color: #4ade80; font-weight: 600; }
+        .checkbox-item input { accent-color: #4ade80; width: 18px; height: 18px; }
+        
+        .stocks-grid { padding: 2.5rem; overflow-y: auto; }
+        .stocks-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 2rem; 
+        }
+        .stocks-header h2 { color: #4ade80; font-size: 1.8rem; font-weight: 700; }
+        .results-count { color: rgba(255,255,255,0.8); font-weight: 500; }
+        
+        .stock-card { 
+            background: rgba(255,255,255,0.08); 
+            border-radius: 20px; 
+            padding: 1.8rem; 
+            margin-bottom: 1.5rem; 
+            cursor: pointer; 
+            transition: all 0.4s; 
+            border: 1px solid rgba(255,255,255,0.12);
+            position: relative; 
+            overflow: hidden;
+        }
+        .stock-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 5px; 
+            background: linear-gradient(90deg, #4ade80, #22c55e, #4ade80); 
+            transform: scaleX(0); 
+            transition: transform 0.4s; 
+        }
+        .stock-card:hover::before { transform: scaleX(1); }
+        .stock-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4); 
+            border-color: rgba(74,222,128,0.3);
+        }
+        .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .stock-name { font-size: 1.3rem; font-weight: 700; }
+        .stock-change { font-size: 1.2rem; font-weight: 700; }
+        .positive { color: #4ade80 !important; }
+        .negative { color: #ef4444 !important; }
+        .stock-mini-chart { 
+            height: 45px; 
+            margin: 1.2rem 0; 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 25px; 
+            overflow: hidden; 
+        }
+        .stock-footer { display: flex; gap: 1.2rem; }
+        .stat { flex: 1; text-align: center; }
+        .stat-value { font-size: 1.2rem; font-weight: 700; }
+        .stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.2rem; }
+        
+        /* DETAIL MODAL - PERFECTED */
+        .stock-detail { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            z-index: 10000; 
+            display: none; 
+            backdrop-filter: blur(10px);
+        }
+        .detail-content { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 92%; 
+            max-width: 1200px; 
+            max-height: 92vh; 
+            overflow-y: auto; 
+            background: rgba(15,15,35,0.98); 
+            color: white; 
+            border-radius: 25px; 
+            padding: 2.5rem; 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 30px 100px rgba(0,0,0,0.8);
+        }
+        .close-btn { 
+            position: absolute; 
+            top: 1.5rem; 
+            right: 2rem; 
+            font-size: 2.5rem; 
+            cursor: pointer; 
+            color: #aaa; 
+            z-index: 10; 
+            transition: all 0.3s;
+        }
+        .close-btn:hover { color: #4ade80; transform: scale(1.1); }
+        .detail-header { text-align: center; margin-bottom: 2rem; }
+        .detail-price { font-size: 3rem; font-weight: 800; color: #4ade80; margin-bottom: 0.8rem; text-shadow: 0 0 20px rgba(74,222,128,0.5); }
+        .detail-change { font-size: 1.4rem; font-weight: 600; }
+        .detail-stats { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+            background: rgba(255,255,255,0.08); 
+            padding: 1.8rem; 
+            border-radius: 18px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .stat-label { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+        
+        .tradingview-container { 
+            height: 500px; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin: 2rem 0; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .action-buttons { 
+            display: flex; 
+            gap: 1.5rem; 
+            justify-content: center; 
+            margin-top: 2rem; 
+        }
+        .btn { 
+            padding: 1.2rem 3rem; 
+            border: none; 
+            border-radius: 30px; 
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.4s; 
+            flex: 1; 
+            max-width: 180px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-buy { 
+            background: linear-gradient(45deg, #4ade80, #22c55e, #16a34a); 
+            color: white; 
+            box-shadow: 0 10px 30px rgba(74,222,128,0.4);
+        }
+        .btn-sell { 
+            background: linear-gradient(45deg, #ef4444, #dc2626, #b91c1c); 
+            color: white; 
+            box-shadow: 0 10px 30px rgba(239,68,68,0.4);
+        }
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .btn:active { transform: translateY(-2px); }
+        
+        .loading { text-align: center; padding: 4rem; color: rgba(255,255,255,0.6); font-size: 1.2rem; }
+        .status-indicator { 
+            position: fixed; 
+            top: 25px; 
+            right: 25px; 
+            padding: 0.8rem 1.5rem; 
+            background: linear-gradient(45deg, #4ade80, #22c55e); 
+            border-radius: 30px; 
+            font-size: 1rem; 
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(74,222,128,0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 5px 20px rgba(74,222,128,0.4); }
+            50% { box-shadow: 0 5px 30px rgba(74,222,128,0.7); }
+            100% { box-shadow: 0 5px 20px rgba(74,222,128,0.4); }
+        }
+        
+        @media (max-width: 1024px) { 
+            .main-content { grid-template-columns: 1fr; } 
+            .sidebar { 
+                position: fixed; 
+                left: -100%; 
+                width: 280px; 
+                height: 100vh; 
+                z-index: 999; 
+                transition: left 0.4s; 
+            }
+            .detail-content { width: 95%; padding: 2rem; }
+            .tradingview-container { height: 450px; }
+        }
+        @media (max-width: 768px) {
+            .search-box { width: 250px; }
+            .search-box:focus { width: 280px; }
+            .detail-price { font-size: 2.2rem; }
+            .tradingview-container { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📈 TradeSphere Live Stocks Dashboard</h1>
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 Search stocks... (RELIANCE, TCS, INFY)">
+    </div>
+    
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">All Stocks</button>
+        <button class="filter-btn" data-filter="gainers">Top Gainers</button>
+        <button class="filter-btn" data-filter="losers">Top Losers</button>
+        <span>Showing <span id="resultsCount">10</span> results</span>
+    </div>
+    
+    <div class="main-content">
+        <div class="sidebar">
+            <h3>⚙️ Filters</h3>
+            <div class="filter-group">
+                <h4>Sectors</h4>
+                <div class="checkbox-group">
+                    <label class="checkbox-item"><input type="checkbox" value="Banking"> <span>🏦 Banking</span></label>
+                    <label class="checkbox-item"><input type="checkbox" value="IT"> <span>💻 IT</span></label>
+                    <label class="checkbox-item"><input type="checkbox" value="Energy"> <span>⚡ Energy</span></label>
+                    <label class="checkbox-item"><input type="checkbox" value="FMCG"> <span>🛒 FMCG</span></label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <h4>52W Range</h4>
+                <div class="checkbox-group">
+                    <label class="checkbox-item"><input type="checkbox" value="high"> <span>📈 Near 52W High</span></label>
+                    <label class="checkbox-item"><input type="checkbox" value="low"> <span>📉 Near 52W Low</span></label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stocks-grid">
+            <div class="stocks-header">
+                <h2>📊 Live Stocks</h2>
+                <div class="results-count">Updated: <span id="lastUpdate">--</span></div>
+            </div>
+            <div id="stocksContainer" class="loading">🔄 Loading live NSE data...</div>
+        </div>
+    </div>
+    
+    <div class="status-indicator" id="statusIndicator">🟢 LIVE</div>
+    
+    <!--  FINAL TRADINGVIEW CANDLESTICK MODAL -->
+    <div class="stock-detail" id="stockDetail">
+        <div class="detail-content">
+            <span class="close-btn" id="closeDetail">×</span>
+            <div class="detail-header">
+                <h2 id="detailName">Loading...</h2>
+                <div class="detail-price" id="detailPrice">₹0</div>
+                <div class="detail-change" id="detailChange">0% (₹0)</div>
+                <div class="detail-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="volumeStat">--</div>
+                        <div class="stat-label">Volume</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="peStat">--</div>
+                        <div class="stat-label">P/E Ratio</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="mcapStat">--</div>
+                        <div class="stat-label">Market Cap</div>
+                    </div>
+                </div>
+            </div>
+            <!-- 🚀 LIVE 5MIN CANDLESTICK CHART -->
+            <div class="tradingview-container" id="tradingview_mini"></div>
+            <div class="action-buttons">
+               <button class="btn-buy" onclick="openTrade(currentStock, currentPrice)">Buy</button>
+                <button class="btn-sell" onclick="openTrade(currentStock, currentPrice)">Sell</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        //  FINAL LIVE NSE DATA + TRADINGVIEW INTEGRATION
+        const API_BASE = 'http://nse-api-khaki.vercel.app:5000';
+        let allStocks = [];
+        let filteredStocks = [];
+        let tradingViewWidget = null;
+        let updateInterval;
+
+        const defaultStocks = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ITC', 'BHARTIARTL', 'ICICIBANK', 'SBIN', 'LT', 'HINDUNILVR'];
+
+        // LIVE NSE DATA FETCH
+        async function fetchStockData(symbols) {
+            try {
+                const response = await fetch(`${API_BASE}/stock/list?symbols=${symbols.join(',')}&res=num`);
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                return data.status === 'success' ? data.stocks : [];
+            } catch (error) {
+                console.error('API Error:', error);
+                return generateMockData(symbols); // Fallback mock data
+            }
+        }
+
+        // FALLBACK MOCK DATA (Market closed times)
+        function generateMockData(symbols) {
+            return symbols.map(symbol => ({
+                symbol,
+                company_name: symbol,
+                last_price: Math.floor(Math.random() * 5000) + 100,
+                percent_change: (Math.random() - 0.5) * 10,
+                change: Math.random() * 100,
+                volume: Math.floor(Math.random() * 10000000),
+                market_cap: Math.floor(Math.random() * 5000000000000),
+                pe_ratio: Math.floor(Math.random() * 50) + 10
+            }));
+        }
+
+        // DISPLAY STOCKS
+        function displayStocks(stocks) {
+            const container = document.getElementById('stocksContainer');
+            if (stocks.length === 0) {
+                container.innerHTML = '<div class="loading">📊 No data available. Markets may be closed.</div>';
+                return;
+            }
+            
+            container.innerHTML = stocks.map(stock => `
+                <div class="stock-card" onclick="showDetail('${stock.symbol}')">
+                    <div class="stock-header">
+                        <div class="stock-name">${stock.company_name || stock.symbol}</div>
+                        <div class="stock-change ${stock.percent_change >= 0 ? 'positive' : 'negative'}">
+                            ₹${stock.last_price?.toLocaleString('en-IN') || '--'}
+                            <span style="font-size: 0.95rem; font-weight: 500;">(${stock.percent_change?.toFixed(2) || '--'}%)</span>
+                        </div>
+                    </div>
+                    <div class="stock-mini-chart" id="mini-${stock.symbol}"></div>
+                    <div class="stock-footer">
+                        <div class="stat">
+                            <div class="stat-value">${stock.volume ? (stock.volume/10000000).toFixed(1) + 'Cr' : '--'}</div>
+                            <div class="stat-label">Volume</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">₹${stock.market_cap ? (stock.market_cap/10000000).toFixed(0) + 'Cr' : '--'}</div>
+                            <div class="stat-label">Mkt Cap</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${stock.pe_ratio?.toFixed(1) || '--'}</div>
+                            <div class="stat-label">P/E</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            stocks.forEach(stock => drawMiniChart(stock.symbol, stock.last_price || 1000));
+            document.getElementById('resultsCount').textContent = stocks.length;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('hi-IN');
+        }
+
+        // MINI CHART
+        function drawMiniChart(symbol, price) {
+            const canvas = document.getElementById(`mini-${symbol}`);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 140;
+            canvas.height = 45;
+            const points = Array(25).fill(price).map((p, i) => p + (Math.random() - 0.5) * 20);
+            ctx.strokeStyle = points[points.length-1] > points[0] ? '#4ade80' : '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            const height = canvas.height * 0.8;
+            const min = Math.min(...points), max = Math.max(...points);
+            points.forEach((p, i) => {
+                const x = (i / 24) * canvas.width;
+                const y = (canvas.height / 2) + ((p - min) / (max - min) - 0.5) * height;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        //  MAIN FEATURE: LIVE TRADINGVIEW CANDLESTICK
+        async function showDetail(symbol) {
+            const detail = document.getElementById('stockDetail');
+            const nameEl = document.getElementById('detailName');
+            const priceEl = document.getElementById('detailPrice');
+            const changeEl = document.getElementById('detailChange');
+            
+            detail.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            try {
+                // LIVE NSE DATA
+                const response = await fetch(`${API_BASE}/stock?symbol=${symbol}&res=num`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const stock = data.data;
+                    nameEl.textContent = stock.company_name || symbol;
+                    priceEl.textContent = `₹${stock.last_price?.toLocaleString('en-IN') || '--'}`;
+                    const changeClass = stock.percent_change >= 0 ? 'positive' : 'negative';
+                    changeEl.innerHTML = `<span class="${changeClass}">₹${stock.change?.toFixed(2) || 0} (${stock.percent_change?.toFixed(2) || 0}%)</span>`;
+                    changeEl.className = `detail-change ${changeClass}`;
+                    
+                    // LIVE STATS UPDATE
+                    document.getElementById('volumeStat').textContent = stock.volume ? (stock.volume/1e6).toFixed(1) + 'M' : '--';
+                    document.getElementById('peStat').textContent = stock.pe_ratio?.toFixed(1) || '--';
+                    document.getElementById('mcapStat').textContent = stock.market_cap ? (stock.market_cap/1e10).toFixed(2) + 'L Cr' : '--';
+                }
+                
+                // DESTROY PREVIOUS CHART
+                if (tradingViewWidget) {
+                    tradingViewWidget.remove();
+                    tradingViewWidget = null;
+                }
+                
+                //  LIVE 5MIN CANDLESTICK CHART - PERFECT CONFIG
+                tradingViewWidget = new TradingView.widget({
+                    "container_id": "tradingview_mini",
+                    "width": "100%",
+                    "height": 500,
+                    "symbol": `${symbol}.NS`,
+                    "interval": "5",           // ✅ 5min LIVE candles
+                    "timezone": "Asia/Kolkata", // ✅ IST time
+                    "theme": "dark",           // ✅ Dark theme
+                    "style": "1",              // ✅ Candlestick
+                    "locale": "en",
+                    "toolbar_bg": "#1a1a2e",
+                    "enable_publishing": false,
+                    "hide_top_toolbar": true,
+                    "hide_legend": true,
+                    "hide_volume": false,      // ✅ Volume bars ON
+                    "autosize": true,
+                    "show_popup_button": false,
+                    "studies": [
+                        "MASimple@tv-basicstudies",  // Moving Average
+                        "BB@tv-basicstudies"         // Bollinger Bands
+                    ],
+                    "support_host": "https://www.tradingview.com"
+                });
+                
+            } catch (e) {
+                console.error('Chart Error:', e);
+                nameEl.textContent = `${symbol} (Demo)`;
+                priceEl.textContent = '₹2,500';
+                changeEl.innerHTML = '<span class="positive">+₹45 (+1.8%)</span>';
+            }
+        }
+
+        // CLOSE MODAL
+        document.getElementById('closeDetail').onclick = closeModal;
+        document.getElementById('stockDetail').onclick = (e) => {
+            if (e.target === document.getElementById('stockDetail')) closeModal();
+        };
+
+        function closeModal() {
+            document.getElementById('stockDetail').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            if (tradingViewWidget) {
+                tradingViewWidget.remove();
+                tradingViewWidget = null;
+            }
+        }
+
+        //  BUY/SELL ORDERS
+        function placeOrder(type) {
+            const symbol = document.getElementById('detailName').textContent;
+            const price = document.getElementById('detailPrice').textContent;
+            alert(`🎯 ${type} ORDER PLACED!\n\n📈 Stock: ${symbol}\n💰 Price: ${price}\n⏰ Time: ${new Date().toLocaleTimeString('hi-IN')}\n\n🚀 Demo Mode - Connect Zerodha/Upstox API for LIVE Trading!`);
+        }
+
+        // FILTERS & SEARCH
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelector('.filter-btn.active').classList.remove('active');
+                btn.classList.add('active');
+                filterStocks();
+            };
+        });
+
+        document.getElementById('searchInput').oninput = filterStocks;
+
+        function filterStocks() {
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredStocks = allStocks.filter(stock => {
+                const matchesSearch = !searchTerm || 
+                    stock.symbol.toLowerCase().includes(searchTerm) || 
+                    (stock.company_name && stock.company_name.toLowerCase().includes(searchTerm));
+                let matchesFilter = true;
+                if (activeFilter === 'gainers') matchesFilter = stock.percent_change > 0;
+                if (activeFilter === 'losers') matchesFilter = stock.percent_change < 0;
+                return matchesSearch && matchesFilter;
+            });
+            displayStocks(filteredStocks.slice(0, 25));
+        }
+
+        // LIVE AUTO UPDATE
+        async function updateData() {
+            const data = await fetchStockData(defaultStocks);
+            allStocks = data.map(stock => ({ ...stock, sector: stock.sector || 'Others' }));
+            filteredStocks = [...allStocks];
+            filterStocks();
+            document.getElementById('statusIndicator').textContent = `🟢 LIVE - ${new Date().toLocaleTimeString('hi-IN')}`;
+        }
+
+        //  INIT DASHBOARD
+        updateData();
+        updateInterval = setInterval(updateData, 10000); // 10s live updates
+
+        // OFFLINE HANDLING
+        window.addEventListener('offline', () => {
+            document.getElementById('statusIndicator').textContent = '🔴 OFFLINE';
+            document.getElementById('stocksContainer').innerHTML = '<div class="loading">🌐 No internet connection. Please reconnect.</div>';
+        });
+
+        window.addEventListener('online', updateData);
+    </script>
+</body>
+</html>

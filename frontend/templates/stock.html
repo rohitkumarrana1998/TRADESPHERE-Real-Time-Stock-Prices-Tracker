@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TradeSphere MAX Clone</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #131722;
+    color: white;
+}
+
+/* 🔝 TOP BAR */
+.topbar {
+    height: 50px;
+    background: #1e222d;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+/* LEFT */
+.left {
+    flex: 1;
+}
+
+/* CENTER */
+.center-btn {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+/* RIGHT */
+.right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* BUTTON STYLE */
+.buy {
+    background: green;
+    color: white;
+    padding: 6px 15px;
+    border: none;
+    border-radius: 5px;
+}
+
+.sell {
+    background: red;
+    color: white;
+    padding: 6px 15px;
+    border: none;
+    border-radius: 5px;
+}
+
+.buy:hover { background: #00cc66; }
+.sell:hover { background: #ff3333; }
+
+.topbar select, .topbar button {
+    margin-right: 5px;
+    padding: 5px;
+    background: #2a2e39;
+    color: white;
+    border: none;
+    border-radius: 3px;
+}
+
+/* 📦 MAIN */
+.main {
+    display: flex;
+    height: calc(100vh - 50px);
+}
+
+/* LEFT BAR */
+.leftbar {
+    width: 60px;
+    background: #1e222d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+}
+
+.tool {
+    width: 30px;
+    height: 30px;
+    background: #2a2e39;
+    margin: 8px 0;
+    border-radius: 4px;
+}
+
+/* CENTER */
+.center {
+    flex: 1;
+    position: relative;
+}
+
+#tv_chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* RIGHT */
+.rightbar {
+    width: 250px;
+    background: #1e222d;
+    padding: 10px;
+}
+
+.stock {
+    padding: 8px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+}
+
+.stock:hover {
+    background: #2a2e39;
+}
+
+/* BOTTOM */
+.bottombar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #1e222d;
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+}
+
+.bottombar button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    background: #2a2e39;
+    color: white;
+    border: none;
+}
+</style>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+</head>
+
+<body>
+
+<!-- 🔝 TOPBAR -->
+<div class="topbar">
+
+    <!-- LEFT -->
+    <div class="left">
+        <select id="stockSelect">
+            <option value="NASDAQ:AAPL">AAPL</option>
+            <option value="NASDAQ:REAL">REAL</option>
+            <option value="NSE:RELIANCE">RELIANCE</option>
+            <option value="NSE:TCS">TCS</option>
+            <option value="NSE:NIFTY">NIFTY</option>
+            <option value="NSE:BANKNIFTY">BANKNIFTY</option>
+            <option value="NSE:SENSEX">SENSEX</option>
+            <option value="NSE:FINNIFTY">FINNIFTY</option>
+            
+        </select>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center-btn">
+       <!-- BUY SELL MODAL -->
+<div id="tradeModal" class="stock-modal" style="display:none;">
+
+    <div class="modal-overlay" onclick="closeTrade()"></div>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h3 id="tradeTitle">Trade</h3>
+            <span class="close-btn" onclick="closeTrade()">×</span>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="detail-row">
+                <span>Stock</span>
+                <span id="tradeStock"></span>
+            </div>
+
+            <div class="detail-row">
+                <span>Price</span>
+                <span id="tradePrice"></span>
+            </div>
+
+            <div class="detail-row">
+                <span>Quantity</span>
+                <input type="number" id="qty" value="1" min="1">
+            </div>
+        </div>
+
+    </div>
+</div>
+        <span id="price">₹--</span>
+        <button class="buy" onclick="openTrade(currentSymbol, document.getElementById('price').innerText)">Buy</button>
+        <button class="sell" onclick="openTrade(currentSymbol, document.getElementById('price').innerText)">Sell</button>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+        <button>Indicators</button>
+        <button>Alert</button>
+    </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- LEFT -->
+    <div class="leftbar">
+        <div class="tool"></div>
+        <div class="tool"></div>
+        <div class="tool"></div>
+        <div class="tool"></div>
+        <div class="tool"></div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+        <div id="tv_chart"></div>
+
+        <div class="bottombar">
+            <button onclick="setIntervalTV('1')">1m</button>
+            <button onclick="setIntervalTV('5')">5m</button>
+            <button onclick="setIntervalTV('15')">15m</button>
+            <button onclick="setIntervalTV('60')">1h</button>
+            <button onclick="setIntervalTV('D')">1D</button>
+        </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="rightbar">
+        <h3>Watchlist</h3>
+
+        <div class="stock" onclick="loadChart('NASDAQ:AAPL')">AAPL</div>
+        <div class="stock" onclick="loadChart('NASDAQ:REAL')">REAL</div>
+        <div class="stock" onclick="loadChart('NSE:RELIANCE')">RELIANCE</div>
+        <div class="stock" onclick="loadChart('NSE:TCS')">TCS</div>
+    </div>
+
+</div>
+
+<script>
+
+let currentSymbol = "NASDAQ:AAPL";
+let currentInterval = "5";
+
+// ============================
+// LOAD CHART
+// ============================
+function loadChart(symbol) {
+    currentSymbol = symbol;
+
+    document.getElementById("tv_chart").innerHTML = "";
+
+    new TradingView.widget({
+        autosize: true,
+        symbol: currentSymbol,
+        interval: currentInterval,
+        timezone: "Asia/Kolkata",
+        theme: "dark",
+        style: "1",
+        container_id: "tv_chart"
+    });
+}
+
+// ============================
+// INTERVAL
+// ============================
+function setIntervalTV(interval) {
+    currentInterval = interval;
+    loadChart(currentSymbol);
+}
+
+// ============================
+// DROPDOWN
+// ============================
+document.getElementById("stockSelect").addEventListener("change", (e) => {
+    loadChart(e.target.value);
+});
+
+// ============================
+// LIVE PRICE (Yahoo)
+// ============================
+async function getPrice() {
+    try {
+        let sym = currentSymbol.includes("NSE:") 
+            ? currentSymbol.replace("NSE:", "") + ".NS"
+            : currentSymbol.replace("NASDAQ:", "");
+
+        const res = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${sym}`);
+        const data = await res.json();
+
+        let price = data.quoteResponse.result[0].regularMarketPrice;
+        document.getElementById("price").innerText = "₹ " + price;
+
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+setInterval(getPrice, 2000);
+
+// default
+loadChart(currentSymbol);
+
+</script>
+</body>
+</html>
