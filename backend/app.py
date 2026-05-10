@@ -1,5 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request
-from flask import jsonify
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,11 +19,9 @@ app.config['SECRET_KEY'] = 'secret123'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Upload folder fix
 UPLOAD_FOLDER = os.path.join(BASE_DIR, '../frontend/static/uploads')
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = SQLAlchemy(app)
@@ -85,19 +82,16 @@ def google_login():
 
 # ================= ROUTES =================
 
-# FORGOT PASSWORD
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
 
     if request.method == "POST":
         email = request.form.get("email")
-
         user = User.query.filter_by(email=email).first()
 
         if not user:
             return "Email not found!"
 
-        # 🔥 Demo reset password
         new_password = "123456"
         user.password = generate_password_hash(new_password)
         db.session.commit()
@@ -105,7 +99,8 @@ def forgot_password():
         return "Password reset successful! New password is 123456"
 
     return render_template("forgot_password.html")
-# CONTACT PAGE (FIXED)
+
+# CONTACT (ONLY ONE FIXED VERSION)
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
 
@@ -116,10 +111,7 @@ def contact():
         message = request.form.get("message")
 
         print("===== CONTACT FORM =====")
-        print("Name:", name)
-        print("Email:", email)
-        print("Subject:", subject)
-        print("Message:", message)
+        print(name, email, subject, message)
 
         return "Form Submitted Successfully ✅"
 
@@ -141,10 +133,6 @@ def stocks():
 def markets():
     return render_template("markets.html")
 
-@app.route("/contact")
-def contact_page():
-    return render_template("contact.html")
-
 @app.route("/get-started")
 def get_started():
 
@@ -161,18 +149,12 @@ def stock_api(symbol):
         "history": [100,102,101,105],
         "market_cap": "1T"
     })
+
 @app.route("/nifty50")
 def nifty50():
     import yfinance as yf
 
-    symbols = [
-        "RELIANCE.NS",
-        "TCS.NS",
-        "INFY.NS",
-        "HDFCBANK.NS",
-        "ICICIBANK.NS",
-        "SBIN.NS"
-    ]
+    symbols = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","SBIN.NS"]
 
     data_list = []
 
@@ -195,7 +177,7 @@ def nifty50():
             })
 
         except Exception as e:
-            print("Error:", e)
+            print(e)
 
     return jsonify(data_list)
 
@@ -209,16 +191,13 @@ def register():
         email = request.form["email"]
         password = request.form["password"]
 
-        # check existing user
         if User.query.filter_by(email=email).first():
             return "Email already exists!"
-
-        hashed_pw = generate_password_hash(password)
 
         user = User(
             username=username,
             email=email,
-            password=hashed_pw
+            password=generate_password_hash(password)
         )
 
         db.session.add(user)
@@ -239,11 +218,9 @@ def login():
 
         user = User.query.filter_by(email=email).first()
 
-        # 🔥 if user not found → register page
         if not user:
             return redirect(url_for("register"))
 
-        # check password
         if user.password and not check_password_hash(user.password, password):
             return "Wrong password!"
 
@@ -289,4 +266,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
